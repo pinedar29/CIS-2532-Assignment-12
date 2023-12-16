@@ -1,0 +1,46 @@
+import sqlite3
+
+# Connect to the SQLite database
+connection = sqlite3.connect('books.db')
+
+# Create a Cursor object to interact with the database
+cursor = connection.cursor()
+
+# a) Select all authors' last names from the authors table in descending order.
+cursor.execute('SELECT last FROM authors ORDER BY last DESC')
+result_a = cursor.fetchall()
+print("Authors' Last Names (Descending Order):", result_a)
+
+# b) Select all book titles from the titles table in ascending order.
+cursor.execute('SELECT title FROM titles ORDER BY title ASC')
+result_b = cursor.fetchall()
+print("Book Titles (Ascending Order):", result_b)
+
+# c) Use an INNER JOIN to select all the books for a specific author.
+# Include the title, copyright year, and ISBN. Order the information alphabetically by title.
+author_name = 'Author Name'  # Replace with the specific author's name
+cursor.execute('''SELECT titles.title, titles.copyright, titles.isbn
+                  FROM titles
+                  INNER JOIN author_ISBN ON titles.isbn = author_ISBN.isbn
+                  INNER JOIN authors ON author_ISBN.author_id = authors.author_id
+                  WHERE authors.last = ?
+                  ORDER BY titles.title''', (author_name,))
+result_c = cursor.fetchall()
+print(f"Books for {author_name} (Ordered by Title):", result_c)
+
+# d) Insert a new author into the authors table.
+new_author_data = ('New', 'Author')
+cursor.execute('INSERT INTO authors (last, first) VALUES (?, ?)', new_author_data)
+connection.commit()  # Commit the changes
+
+# e) Insert a new title for an author.
+# Remember that the book must have an entry in the author_ISBN table and an entry in the titles table.
+new_title_data = ('New Title', 'New ISBN', 'New Copyright Year')
+author_id = 1  # Replace with the specific author's ID
+cursor.execute('INSERT INTO titles (title, isbn, copyright) VALUES (?, ?, ?)', new_title_data)
+new_title_id = cursor.lastrowid  # Get the last inserted title's ID
+cursor.execute('INSERT INTO author_ISBN (author_id, isbn) VALUES (?, ?)', (author_id, new_title_data[1]))
+connection.commit()  # Commit the changes
+
+# Close the connection when you're done
+connection.close()
